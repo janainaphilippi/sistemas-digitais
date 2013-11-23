@@ -9,7 +9,7 @@ entity topocalc is
          LEDR : OUT STD_LOGIC_VECTOR(3 downto 0);
          LEDG : OUT STD_LOGIC_VECTOR(7 downto 0);
          LCD_DATA: OUT STD_LOGIC_VECTOR(7 downto 0);
-			LCD_BLON, LCD_ON, LCD_RW, LCD_RS, LCD_EN: OUT STD_LOGIC
+	 LCD_BLON, LCD_ON, LCD_RW, LCD_RS, LCD_EN: OUT STD_LOGIC
   );
 end topocalc;
 
