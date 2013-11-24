@@ -9,7 +9,7 @@ end DecodeHEX;
 
 architecture DEC_estr of DecodeHEX is
 begin 
-  O <=   "1000000" when I = "0000" else
+  		 O <=   "1000000" when I = "0000" else
 			"1111001" when I = "0001" else
 			"0100100" when I = "0010" else
 			"0110000" when I = "0011" else
