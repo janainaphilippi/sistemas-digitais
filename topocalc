@@ -9,7 +9,7 @@ entity topocalc is
          LEDR : OUT STD_LOGIC_VECTOR(3 downto 0);
          LEDG : OUT STD_LOGIC_VECTOR(7 downto 0);
          LCD_DATA: OUT STD_LOGIC_VECTOR(7 downto 0);
-	 LCD_BLON, LCD_ON, LCD_RW, LCD_RS, LCD_EN: OUT STD_LOGIC
+			LCD_BLON, LCD_ON, LCD_RW, LCD_RS, LCD_EN: OUT STD_LOGIC
   );
 end topocalc;
 
@@ -46,8 +46,8 @@ architecture topo_estru of topocalc is
    end component;
         
    component DecodeHEX
-        port (I: in std_logic_vector(3 downto 0);
-					O: out std_logic_vector(0 to 6)
+      port (I: in std_logic_vector(3 downto 0);
+				O: out std_logic_vector(6 downto 0)
      );
         end component;
         
@@ -163,9 +163,11 @@ L1: SOMA_SUB port map (SW(7 downto 0), G2(7 downto 0), '0', F1, sum(3), sum(2), 
 
 L2: SOMA_SUB port map (SW(7 downto 0), G2(7 downto 0), '1', F2, sub(3), sub(2), sub(1), sub(0));
 
-L3: desloca_esquerda port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F3);
+L3: desloca_direita port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F3);
 
-L4: desloca_direita port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F4);
+L4: desloca_esquerda port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F4);
+
+
 
 L5: mux4x1 port map (F1, F2, F3, F4, SEL, F);
 
