@@ -12,7 +12,7 @@ entity FSM_LCD is
 end FSM_LCD; 
 
 architecture FSM_beh of FSM_LCD is 
-        type states is (C0, C1, C2, CMD1, CMD2, CMD3, ESOMA, EMULT, ESUB, EDIV, NEG_OP, OP_1H2, OP_1T2, OP_1U2, OP_2, LIMPA, EIGUAL, RESULT);
+        type states is (C0, C1, C2, CMD1, CMD2, CMD3, ESOMA, EMULT, ESUB,RESULTU1,RESULTT1,OP2T3,RESULTH1,OP1H2,OP1T2,OP1U2,OP2H3, EDIV, NEGOPR,NEGOP2,NEGOP1,OP2U3, LIMPA, EIGUAL, RESULT,Edois);
         signal CA, EA, PE: states;
         signal delay: std_logic_vector(4 downto 0);
                   signal cont, enable_in, enable_out, envio, iniciado: std_logic;
@@ -61,46 +61,40 @@ begin
                                         
                               when CMD1 =>   -- 038H
 											RS <= '0';
-											EN <= '1';
 										Selection <= "01001";
 											PE <= CMD2;
 										
 										when CMD2 =>	-- 0FH
 											RS <= '0';
-											EN <= '1';
 										Selection <= "01010";
 											PE <= CMD3;
 										
 										when CMD3 =>	--06H
 											RS <= '0';
-											EN <= '1';
 										Selection <= "01011";
 											PE <= LIMPA;
 											
 										when LIMPA =>	--01H
 											RS <= '0';
-											EN <= '1';
 										Selection <= "10010";
 										if Sign = '1' then 
-											PE <= NEG_OP;
+											PE <= NEGOP1;
 										else
-											PE <= OP_1H2;
+											PE <= OP1H2;
+										end if;
 										
-										when OP_1H2 =>	--H2
+										when OP1H2 =>	--H2
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00011";
-											PE <= OP_1T2;
+											PE <= OP1T2;
 										                                      --OPERANDO 1
-										when OP_1T2 =>	--T2
+										when OP1T2 =>	--T2
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00100";
-											PE <= OP_1U2;
+											PE <= OP1U2;
 										
-										when OP_1U2 =>	--U2
+										when OP1U2 =>	--U2
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00101";
 											If Operation = "00" then
 												PE <= ESOMA;
@@ -108,22 +102,19 @@ begin
 												PE <= ESUB;
 											end if;
 										
-										when OP_2H3 =>	--H3
+										when OP2H3 =>	--H3
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00110";
-											PE <= OP_2T3;
+											PE <= OP2T3;
 										
 										
-										when OP_2T3 =>	--T3
-											RS <= '1';
-											EN <= '1';						--OPERANDO 2 E 1(/ e *)
+										when OP2T3 =>	--T3
+											RS <= '1';						--OPERANDO 2 E 1(/ e *)
 										Selection <= "00111";
-											PE <= OP_2U3;
+											PE <= OP2U3;
 											
-										when OP_2U3 =>	--U3
+										when OP2U3 =>	--U3
 											RS <= '1';
-											EN <= '1';
 										Selection <= "01000";
 										if Operation = "00" then
 											PE <= EIGUAL;
@@ -133,96 +124,90 @@ begin
 											PE <= Edois;
 										else
 											PE <= Edois;
+										end if;
 											
 											
 										when ESOMA =>	-- MAIS
 											RS <= '1';
-											EN <= '1';
 										Selection <= "01100";
 										if Sign = '1' then
-											PE <= NEG_OP1;
+											PE <= NEGOP1;
 										else
-											PE <= OP_2H3;
+											PE <= OP2H3;
+										end if;
 										
 										when ESUB =>	-- MENOS
 											RS <= '1';
-											EN <= '1';
 										Selection <= "01101";
 										if Sign = '1' then
-											PE <= NEG_OP1;
+											PE <= NEGOP1;
 										else
-											PE <= OP_2H3;
+											PE <= OP2H3;
+										end if;
 										
 										when EDIV =>	--BARRA
 											RS <= '1';
-											EN <= '1';
 										Selection <= "01111";
 										if Sign = '1' then
-											PE <= NEG_OP1;
+											PE <= NEGOP1;
 										else
-											PE <= OP_2H3;
+											PE <= OP2H3;
+										end if;
 										
 										when EMULT =>	--VEZES
 											RS <= '1';
-											EN <= '1';
 										Selection <= "01110";
 										if Sign = '1' then
-											PE <= NEG_OP1;
+											PE <= NEGOP1;
 										else
-											PE <= OP_2H3;
+											PE <= OP2H3;
+										end if;
 										
 										when Edois =>	--2
 											RS <= '1';
-											EN <= '1';
 										Selection <= "10001";
 											PE <= EIGUAL;
 										
 										when EIGUAL =>	--IGUAL
 											RS <= '1';
-											EN <= '1';
 										Selection <= "10000";
-										if Sign = '1'; then
-											PE = NEG_OPR;
+										if Sign = '1' then
+											PE <= NEGOPR;
 										else
-											PE <= RESULT_H1;
+											PE <= RESULTH1;
+										end if;
 										
-										when RESULT_H1 =>	--H1
+										when RESULTH1 =>	--H1
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00000";
 										
-										when RESULT_T1 =>	--	T1					--RESULTADO
+										when RESULTT1 =>	--	T1					--RESULTADO
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00001";
 										
-										when RESULT_U1 =>	--U1
+										when RESULTU1 =>	--U1
 											RS <= '1';
-											EN <= '1';
 										Selection <= "00010";
 										
-										when NEG_OP1 =>	--SINAL NEGATIVO OP1
+										when NEGOP1 =>	--SINAL NEGATIVO OP1
 										    RS <= '1';
-											EN <= '1';
 										Selection <= "01101";
 										 if Sign = '1' then
-											PE <= OP_1H2;
+											PE <= OP1H2;
 										end if;
 										
-										when NEG_OP2 =>	--SINAL NEGATIVO OP2
+										when NEGOP2 =>	--SINAL NEGATIVO OP2
 										    RS <= '1';
-											EN <= '1';
 										Selection <= "01101";
 										 if Sign = '1' then
-											PE <= OP_2H3;
+											PE <= OP2H3;
 										end if;
 										
-										when NEG_OPR =>	--SINAL NEGATIVO RESULTADO
+										when NEGOPR =>	--SINAL NEGATIVO RESULTADO
 										    RS <= '1';
-											EN <= '1';
 										Selection <= "01101";
 										 if Sign = '1' then
-											PE <= RESULT_H1;
+											PE <= RESULTH1;
 										end if;
 							
 								end case;
