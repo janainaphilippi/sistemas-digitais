@@ -59,7 +59,7 @@ begin
                 begin 
                         case EA is
                                         
-                                        when CMD1 =>
+                                						 when CMD1 =>
 											RS <= '0';
 											EN <= '1';
 										Selection <= "01001";
