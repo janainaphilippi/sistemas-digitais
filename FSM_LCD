@@ -1,0 +1,179 @@
+library ieee;
+use ieee.std_logic_1164.all; 
+use ieee.std_logic_unsigned.all;
+
+entity FSM_LCD is 
+        port ( 
+        Clock, RST, Sign : in std_logic; 
+        Operation : in std_logic_vector(1 downto 0); 
+        Selection : out std_logic_vector(4 downto 0); 
+        RS, EN : out std_logic
+                        ); 
+end FSM_LCD; 
+
+architecture FSM_beh of FSM_LCD is 
+        type states is (C0, C1, C2, CMD1, CMD2, CMD3, ESOMA, EMULT, ESUB, EDIV, NEG_OP, OP_1H2, OP_1T2, OP_1U2, OP_2, LIMPA, EIGUAL, RESULT);
+        signal CA, EA, PE: states;
+        signal delay: std_logic_vector(4 downto 0);
+                  signal cont, enable_in, enable_out, envio, iniciado: std_logic;
+
+component counter
+        port (
+        Clock, Reset : in std_logic;
+        Fim : out std_logic
+                        );
+end component;
+        
+begin 
+
+
+        P0: process(Clock, RST)
+                        begin
+                                if RST = '0' then
+                                        CA <= C0;
+                                        EA <= CMD1;
+                                        --BA <= B0;
+                                elsif Clock'event and Clock = '1' then
+                                        case CA is
+                                                when C0 =>
+                                                        delay <= (others => '0');
+                                                        CA <= C1;
+                                                        cont <= '0';
+                                                when C1 =>
+                                                        delay <= delay + 1;
+                                                        CA <= C2;
+                                                when C2 =>
+                                                        if delay <= "11110" then --59 cycles = 1180ns
+                                                                CA <= C1;
+                                                        else
+                                                                cont <= '1';
+                                                                CA <= C0;
+                                                                EA <= PE;
+                                                                --BA <= PB;
+                                                        end if;
+                                        end case;
+                                end if;
+                        end process;
+
+        P1: process(Clock, RST, Sign, Operation) 
+                begin 
+                        case EA is
+                                        
+                                        when CMD1 =>
+											RS <= '0';
+											EN <= '1';
+										Selection <= "01001";
+											PE <= CMD2;
+										
+										when CMD2 =>
+											RS <= '0';
+											EN <= '1';
+										Selection <= "01010";
+											PE <= CMD3;
+										
+										when CMD3 =>
+											RS <= '0';
+											EN <= '1';
+										Selection <= "01011";
+											PE <= LIMPA;
+											
+										when LIMPA =>
+											RS <= '0';
+											EN <= '1';
+										Selection <= "10010"
+											PE <= OP_1H2;
+										
+										when OP_1H2 =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "00011";
+											PE <= OP_1T2
+										
+										when OP_1T2 =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "00100";
+											PE <= OP_1U2
+										
+										when OP_1U2 =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "00101";
+											If Operation = "00" then
+												PE <= ESOMA;
+											elsif Operation = "01" then
+												PE <= ESUB;
+											end if;
+										
+										when OP_2H3 =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "00110";
+											PE <= OP_2T3;
+										
+										
+										when OP_2T3 =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "00111";
+											PE <= OP_2U3;
+											
+											when OP_2U3 =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "01000";
+											if Operation = "00" then
+												PE <= RESULT;
+											elsif Operation = "01"then
+												PE <= RESULT;
+											elsif Operation = "10" then
+												PE <= Edois;
+											else
+												PE <= Edois;
+											
+											
+										when ESOMA =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "01100";
+										
+										when ESUB =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "01101";
+										
+										when EDIV =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "01111";
+										
+										when EMULT =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "01110";
+										
+										when Edois =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "10001";
+										
+										when EIGUAL =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= "10000";
+										
+										when RESULT =>
+											RS <= '1';
+											EN <= '1';
+										Selection <= -- H1, T1, U3
+										
+										when NEG_OP =>
+										    RS <= '1';
+											EN <= '1';
+										Selection <= "01101";
+												
+							
+								end case;
+                end process;
+
+end FSM_beh;
