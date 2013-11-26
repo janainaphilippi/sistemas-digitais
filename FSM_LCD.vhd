@@ -14,12 +14,12 @@ end FSM_LCD;
 architecture FSM_beh of FSM_LCD is 
         type states0 is (C0, C1, C2);
         type states1 is (B0, B1, B2);
-        type states2 is (ESCOLHE,CMD1, CMD2, CMD3, ESOMA, EMULT, ESUB, RESULT_U1, RESULT_T1, OP2_T3, RESULT_H1, OP1_H2, OP1_T2, OP1_U2, OP2_H3, EDIV, NEG_OPR, NEG_OP2, NEG_OP1, OP2_U3, LIMPA, EIGUAL, Edois);
+        type states2 is (S0, CMD1, CMD2, CMD3, ESOMA, EMULT, ESUB, RESULT_U1, RESULT_T1, OP2_T3, RESULT_H1, OP1_H2, OP1_T2, OP1_U2, OP2_H3, EDIV, NEG_OPR, NEG_OP2, NEG_OP1, OP2_U3, LIMPA, EIGUAL, Edois);
         signal CA: states0;
         signal BA, PB: states1;
         signal EA, PE: states2;
         signal delay: std_logic_vector(4 downto 0);
-        signal iniciado: std_logic;
+        signal iniciado, NotSending: std_logic;
 
 component counter
         port (
@@ -30,11 +30,14 @@ end component;
         
 begin 
 
-        P0: process(Clock, RST)
+        P0: process(Clock, RST, NotSending)
                         begin
                                 if RST = '0' then
                                         CA <= C0;
-                                        BA <= B0;
+                                        BA <= B2;
+                                        EA <= S0;
+                                elsif NotSending = '1' then
+                                        BA <= B2;
                                 elsif Clock'event and Clock = '1' then
                                         case CA is
                                                 when C0 =>
@@ -56,10 +59,6 @@ begin
         
         P1: process (RST, BA)
                         begin
-                                if RST = '0' then
-                                        EN <= '0';
-                                        EA <= CMD1;
-                                else
                                         case BA is
                                                 when B0 =>
                                                         EN <= '0';
@@ -72,13 +71,20 @@ begin
                                                         PB <= B0;
                                                         EA <= PE;
                                         end case;
-                                end if;
                         end process;
 
-        P2: process(EA, Clock, RST, Sign, Operation) 
+        P2: process(EA, Sign, Operation, iniciado) 
                 begin 
                         case EA is
-                                        
+            
+                                when S0 => 
+                                        --NotSending = '1';
+                                        if iniciado = '0' then
+                                                PE <= CMD1;
+                                        else
+                                                PE <= LIMPA;
+                                        end if;
+                                
                                 when CMD1 =>   -- 038H
                                         RS <= '0';
                                         Selection <= "01001";
@@ -95,57 +101,15 @@ begin
                                                                                 
                                 when CMD3 =>        --06H
                                         RS <= '0';
-                                        iniciado <= '1';
+                                         iniciado <= '1';
                                         Selection <= "01011";
                                         PE <= LIMPA;
                                                                                         
                                 when LIMPA =>        --01H
                                         RS <= '0';
                                         Selection <= "10010";
-                                        PE <= ESCOLHE;
-                                
-										  
-				when ESCOLHE =>
-					RS <= '0';
-				if 
-					Operation = "00" then
-					selection <= "00011";
-				elsif 
-					Sign = '1' then
-					PE <= Neg_OP1;
-				else
-					PE <= OP1_H2;
-				end if;
-				if 
-					Operation = "01" then
-					Selection <= "00011";
-				elsif
-					Sign = '1' then
-					PE <= NEG_OP1;
-				else
-					PE <= OP1_H2;
-				end if;
-				if
-					Operation = "10" then
-					Selection <= "00110";
-				elsif
-					Sign = '1' then
-					PE <= NEG_OP2;
-				else
-					PE <= OP2_H3;
-				end if;
-				if
-					Operation = "11" then
-					Selection <= "00110";
-				elsif
-					Sign = '1' then
-					PE <= NEG_OP2;
-				else
-					PE <= OP2_H3;
-				end if;
-												
-
-										  
+                                        PE <= NEG_OP1;
+                                                                                                
                                 when NEG_OP1 =>        --SINAL NEGATIVO OP1
                                         RS <= '1';
                                         Selection <= "01101";
@@ -157,7 +121,7 @@ begin
                                         RS <= '1';
                                         Selection <= "00011";
                                         PE <= OP1_T2;
-                                                                                         --OPERANDO 1
+                                         --OPERANDO 1
                                 when OP1_T2 =>        --T2
                                         RS <= '1';
                                         Selection <= "00100";
@@ -194,7 +158,7 @@ begin
                                         RS <= '1';
                                         Selection <= "01111";
                                         if Sign = '1' then
-                                                PE <= NEG_OP2;
+                                        PE <= NEG_OP2;
                                         else
                                                 PE <= OP2_H3;
                                         end if;
@@ -221,7 +185,7 @@ begin
                                         PE <= OP2_T3;
                                                                                 
                                 when OP2_T3 =>        --T3
-                                        RS <= '1';                                                --OPERANDO 2 E 1(/ e *)
+                                        RS <= '1';                   --OPERANDO 2 E 1(/ e *)
                                         Selection <= "00111";
                                         PE <= OP2_U3;
                                                                                         
@@ -258,16 +222,16 @@ begin
                                         if Sign = '1' then
                                                 PE <= RESULT_H1;
                                         end if;
-                                                                                
-                                when RESULT_H1 =>        --H1
+
+                                when RESULT_H1 =>                        --H1
                                         RS <= '1';
                                         Selection <= "00000";
-                                                                                
-                                when RESULT_T1 =>        --        T1                                        --RESULTADO
+
+                                when RESULT_T1 =>                        --T1       --RESULTADO
                                         RS <= '1';
                                         Selection <= "00001";
                                                                                 
-                                when RESULT_U1 =>        --U1
+                                when RESULT_U1 =>                        --U1
                                         RS <= '1';
                                         Selection <= "00010";
                                                                                 
