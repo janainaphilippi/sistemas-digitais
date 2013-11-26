@@ -16,7 +16,7 @@ end topocalc;
 architecture topo_estru of topocalc is
 			signal EN, SEL: std_logic_vector (1 downto 0);  --signal G1 : std_logic_vector (7 downto 0);
 			signal F, F1, F2, F3, F4, G1, G2,SD0, SD1, SD2,P: std_logic_vector (7 downto 0); -- SD0, SD1, SD0 são os fios que irão para os Bin2BCD
-			signal sub, sum: std_LOGIC_VECTOR (3 downto 0);
+			signal sub, sum, FlagD, FlagM, FlagSB, FlagSM: std_LOGIC_VECTOR (3 downto 0);
 			signal A0,A1, A2, A3, B0, B1, B2, D0, D1, D2: std_logic_vector (3 downto 0); --- fios que vão de B2BCD para os B2A
 			signal h1,h2,h3,t1,t2,t3,u1,u2,u3: std_logic_vector (7 downto 0); --- fios dos Ascii para o mux	    
 			signal selection: std_logic_vector(4 downto 0);
@@ -24,18 +24,20 @@ architecture topo_estru of topocalc is
 	
 	component desloca_esquerda
        port (
-                        CLK, RST, EN: in std_logic;
-                        sr_in: in std_logic_vector(7 downto 0);
-                        sr_out: out std_logic_vector(7 downto 0)
+               CLK, RST, EN: in std_logic;
+					sr_in: in std_logic_vector(7 downto 0);
+					sr_out: out std_logic_vector(7 downto 0);
+					FlagM: out std_logic_vector(3 downto 0)
                 );
    end component;
         
    component desloca_direita
        port (
-                        CLK, RST, EN: in std_logic;
-                        sr_in: in std_logic_vector(7 downto 0);
-                        sr_out: out std_logic_vector(7 downto 0)
-                );
+               CLK, RST, EN: in std_logic;
+					sr_in: in std_logic_vector(7 downto 0);
+					sr_out: out std_logic_vector(7 downto 0);
+					FlagD: out std_logic_vector(3 downto 0)
+					);
    end component;
         
    component mux4x1
@@ -53,27 +55,33 @@ architecture topo_estru of topocalc is
         
    component flipf
         port (CLK, RST, EN: in std_logic;
-                        D: in std_logic_vector(7 downto 0);
-                        Q: out std_logic_vector(7 downto 0)
+								 D: in std_logic_vector(7 downto 0);
+                         Q: out std_logic_vector(7 downto 0)
                 ); -- a saída Q, vai para o LEDG e também para o bin2bcd. Fazer o que com os fios?
         end component;
 
    component FSM
-        port ( 
-                        Clk, Rst, Enter : in std_logic; 
-                        Operacao: in std_logic_vector(1 downto 0); 
-                        Sel: out std_logic_vector(1 downto 0); 
-                        Enable_1, Enable_2: out std_logic 
+        port ( Clk, Rst, Enter : in std_logic; 
+               Operacao: in std_logic_vector(1 downto 0); 
+               Sel: out std_logic_vector(1 downto 0); 
+               Enable_1, Enable_2: out std_logic 
                         );
         end component;
 
-   component SOMA_SUB
-      port (A, B: in std_logic_vector(7 downto 0);
-                Sel : in std_logic;
-                F   : out std_logic_vector(7 downto 0);
-                Zero, Over, Car, Neg: out std_logic
-     );
-        end component;
+   component SOMA 
+			port (A, B: in std_logic_vector(7 downto 0);
+					F   : out std_logic_vector(7 downto 0);
+					FlagSM: out std_logic_vector(3 downto 0)
+					);
+			end component;
+			
+	component SUBT is
+			port (A, B: in std_logic_vector(7 downto 0);
+					F   : out std_logic_vector(7 downto 0);
+					FlagSB: out std_logic_vector(3 downto 0)
+					);
+			end component;
+
 
    component complemento2  
         port (entrada: in std_logic_vector(7 downto 0); 
@@ -111,12 +119,34 @@ component muxsign
      );
 end component;
 
+component FSM_LCD  
+        port ( 
+        Clock, RST, Sign : in std_logic; 
+        Operation : in std_logic_vector(1 downto 0); 
+        Selection : out std_logic_vector(4 downto 0); 
+        RS, EN : out std_logic
+                        ); 
+end component; 
+
+component muxLEDR is
+			port (w, x, y, z: in std_logic_vector(3 downto 0);
+					s: in std_logic_vector(1 downto 0);
+					m: out std_logic_vector(3 downto 0)
+					);
+end component;
+
+
 
 begin
   
-   LEDR <= sub when SW(17 downto 16) = "01" else
-           sum when SW(17 downto 16) = "00";
-        
+   --LEDR <= sub when SW(17 downto 16) = "01" else
+           --sum when SW(17 downto 16) = "00";
+
+FSM1: FSM_LCD port map (CLOCK_50,KEY(0),sign, SW(17 downto 16),selection,LCD_RS, LCD_EN);
+			  
+
+M2: muxLEDR port map (FlagSM, FlagSB, FlagD, FlagM, SEL, LEDR(3 downto 0));
+
 M1: muxsign port map (SD0(7), SD1(7), SD2(7),selection,sign);-- sign é o sinal que vai do mux pro LCD_FSM
 		  
 M0: mux19x1 port map (h1,t1,u1,h2,t2,u2,h3,t3,u3,"00111000","00001110","00000110","00101011","00101100","00101010","00101111","00111101","00110010","00000001", selection , LCD_DATA(7 downto 0)); --Lcd fio de saída para o LCD
@@ -159,13 +189,13 @@ C2: complemento2 port map (SW(7 downto 0),SD2); -- entrada nas chaves
 L0: FSM port map (CLOCK_50, KEY(0), KEY(1), SW(17 downto 16), SEL, EN(0), EN(1));
         
         
-L1: SOMA_SUB port map (SW(7 downto 0), G2(7 downto 0), '0', F1, sum(3), sum(2), sum(1), sum(0));
+L1: SOMA port map (SW(7 downto 0), G2(7 downto 0), F1, FlagSM(3 downto 0));
 
-L2: SOMA_SUB port map (SW(7 downto 0), G2(7 downto 0), '1', F2, sub(3), sub(2), sub(1), sub(0));
+L2: SUBT port map (SW(7 downto 0), G2(7 downto 0), F2, FlagSB(3 downto 0));
 
-L3: desloca_direita port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F3);
+L3: desloca_direita port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F3, FlagD(3 downto 0));
 
-L4: desloca_esquerda port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F4);
+L4: desloca_esquerda port map (CLOCK_50, KEY(0), KEY(1), SW(7 downto 0), F4, FlagM(3 downto 0));
 
 
 
