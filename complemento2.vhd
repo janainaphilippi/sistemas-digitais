@@ -11,33 +11,32 @@ use ieee.std_logic_unsigned.all;
 
 architecture com2 of complemento2 is
 					signal A,B,F: std_logic_vector (7 downto 0);
-					signal Sel: std_logic;
-	            signal Zero, Over, Car, Neg: std_logic;
-		
-		component SOMA_SUB  is
-port (A, B: in std_logic_vector(7 downto 0);
-		Sel : in std_logic; --ligar direto na chave SW16
-		F   : out std_logic_vector(7 downto 0);
-		Zero, Over, Car, Neg: out std_logic
+					signal Zero, Over, Car, Neg: std_logic;
+		         signal FlagSB: std_logic_vector(3 downto 0);
+					
+component SUBT 
+		port (A, B: in std_logic_vector(7 downto 0);
+				F   : out std_logic_vector(7 downto 0);
+				FlagSB: out std_logic_vector
      );
 end component;
+
 	
 begin
 	
 	
 	
 	A <= "00000000";
-	B <= entrada;
-	Sel <= '1';
-	Zero <= '0';
-	Over <= '0';
-	Car <= '0';
-	Neg <= '0';
+	B <= entrada;															
+	FlagSB(3) <= '0';
+	FlagSB(2) <= '0';
+	FlagSB(1) <= '0';
+	FlagSB(0) <= '0';
   
 	
-	H0: SOMA_SUB port map (A,B,Sel,F,Zero,Over,Car,Neg);
+	H0: SUBT port map (A,B,F,FlagSB);
  
-	saida <= F when entrada (7)= '1' 
+	saida <= F when entrada(7)= '1' 
 	else
 	entrada;
 	
